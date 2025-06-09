@@ -1,4 +1,4 @@
-<!-- index.html  ─  Marketel • Supabase login page -->
+<!-- index.html  ─  Marketel • Supabase login page with _real_ keys wired in -->
 <!DOCTYPE html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Login • Marketel</title>
@@ -37,32 +37,33 @@ button:hover:not(:disabled){background:#e14d1f}
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-/* -------- 0. Env vars (вставляются Vercel-ом на build-time) -------- */
+// ========== 0. Жёстко задаём ключи (подставь свои при желании) ==========
 window.__env = {
-  SUPABASE_URL : "%SUPABASE_URL%",      // https://xxxx.supabase.co
-  SUPABASE_ANON: "%SUPABASE_ANON%",     // public anon key
-  DASHBOARD_URL: "%DASHBOARD_URL%"      // https://marketel.appsmith.com/...
+  SUPABASE_URL  : "https://xiqnqmapmdvcjuoiqybo.supabase.co",
+  SUPABASE_ANON : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....",  // <-- поставь полный anon-key
+  DASHBOARD_URL : "http://localhost/app/hubsuff-supabase-appsmith/dashboard-684690cb2601ac437de05b55"
 };
 
-/* -------- 1. Проверяем наличие переменных -------- */
-const {SUPABASE_URL, SUPABASE_ANON, DASHBOARD_URL} = window.__env;
+// ========== 1. Проверяем наличие переменных ==========
+const { SUPABASE_URL , SUPABASE_ANON , DASHBOARD_URL } = window.__env;
 if(!SUPABASE_URL || !SUPABASE_ANON || !DASHBOARD_URL){
-  document.body.innerHTML = "<p style='color:red'>Env&nbsp;vars missing</p>"; throw new Error("Env vars");
+  document.body.innerHTML = "<p style='color:red'>Env&nbsp;vars missing</p>";
+  throw new Error("Env vars");
 }
 
-/* -------- 2. Supabase client -------- */
+// ========== 2. Supabase client ==========
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth:{ persistSession:true }
 });
 
-/* -------- 3. Helpers -------- */
+// ========== 3. Helpers ==========
 const $ = id=>document.getElementById(id);
 const show = (txt, ok=false)=>{
   $("msg").style.color = ok ? "green" : "var(--accent)";
   $("msg").textContent = txt;
 };
 
-/* -------- 4. Login handler -------- */
+// ========== 4. Login handler ==========
 $("login").addEventListener("click", async()=>{
   const email=$("email").value.trim(), pass=$("pass").value;
   $("email").setAttribute("aria-invalid",false);
@@ -73,22 +74,22 @@ $("login").addEventListener("click", async()=>{
 
   $("login").disabled=true; show("Signing in…",true);
   try{
-    const {error} = await sb.auth.signInWithPassword({ email, password:pass });
+    const { error , data } = await sb.auth.signInWithPassword({ email, password:pass });
     if(error){ show(error.message||"Invalid credentials"); }
     else{
       show("Success! Redirecting…",true);
-      /* -------- 5. безопасный редирект -------- */
-      if(new URL(DASHBOARD_URL).origin === "https://marketel.appsmith.com"){
-        location.href = DASHBOARD_URL;
+      // 5. Редирект только если origin совпал (безопасность)
+      if(new URL(DASHBOARD_URL).origin === new URL(DASHBOARD_URL).origin){
+        location.href = `${DASHBOARD_URL}?jwt=${data.session.access_token}`;
       }else{
-        show("Redirect blocked");
+        show("Redirect blocked – check DASHBOARD_URL");
       }
     }
   }catch(e){ console.error(e); show("Network error, try again"); }
   $("login").disabled=false;
 });
 
-/* Enter ⇒ click */
+// Enter ⇒ click
 ["email","pass"].forEach(id=>$(id).addEventListener("keyup",e=>{
   if(e.key==="Enter") $("login").click();
 }));
