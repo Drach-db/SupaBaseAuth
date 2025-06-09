@@ -1,5 +1,4 @@
-<!-- index.html  –  Supabase  ➜  Appsmith  логин -->
-
+<!-- index.html – Supabase ➜ Appsmith логин (готовая версия) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +6,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Login</title>
 
-  <!-- шрифт и чуть-чуть CSS, можешь трогать как угодно -->
+  <!-- чуть-чуть стилей, трогайте как угодно -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     :root{--bg:#f5f3ef;--panel:#fff;--text:#0e1e24;--accent:#ff5722;--border:#d4d3d0;--r:.75rem}
@@ -31,10 +30,10 @@
   <h1>Вход</h1>
 
   <label for="email">Email</label>
-  <input id="email"   type="email"    placeholder="you@company.com" autocomplete="email" />
+  <input id="email" type="email" placeholder="you@company.com" autocomplete="email" />
 
   <label for="pass">Password</label>
-  <input id="pass"    type="password" placeholder="••••••••"        autocomplete="current-password" />
+  <input id="pass"  type="password" placeholder="••••••••" autocomplete="current-password" />
 
   <button id="login" type="button">Sign&nbsp;in</button>
   <div id="msg" class="msg" aria-live="polite"></div>
@@ -43,10 +42,10 @@
 <!-- Supabase JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-/* ===== 0. ЖЁСТКО ВШИВАЕМ КЛЮЧИ (замени на свои) ===== */
-const SUPABASE_URL   = "https://xiqnqmapmdvcjuoiqybo.supabase.co";           // ← ВСТАВЬ СВОЁ
-const SUPABASE_ANON  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhpcW5xbWFwbWR2Y2p1b2lxeWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyODg1NzEsImV4cCI6MjA2NDg2NDU3MX0.KujwGRoMKA44cnRAxQANzVRoEDby-OwmVHpSfO_jFFg";            // ← ВСТАВЬ СВОЁ (anon key целиком)
-const DASHBOARD_URL  = "http://localhost/app/hubsuff-supabase-appsmith/dashboard-684690cb2601ac437de05b55"; // ← ВСТАВЬ СВОЁ
+/* ===== 0. ЖЁСТКО ВШИВАЕМ КЛЮЧИ ===== */
+const SUPABASE_URL  = "https://xiqnqmapmdvcjuoiqybo.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhpcW5xbWFwbWR2Y2p1b2lxeWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyODg1NzEsImV4cCI6MjA2NDg2NDU3MX0.KujwGRoMKA44cnRAxQANzVRoEDby-OwmVHpSfO_jFFg";
+const DASHBOARD_URL = "http://localhost/app/hubsuff-supabase-appsmith/dashboard-684690cb2601ac437de05b55";
 
 /* ===== 1. Supabase client ===== */
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
@@ -60,7 +59,7 @@ const show = (txt, ok = false) => {
   $("msg").textContent = txt;
 };
 
-/* ===== 3. Обработчик логина ===== */
+/* ===== 3. Login handler ===== */
 $("login").addEventListener("click", async () => {
   const email = $("email").value.trim();
   const pass  = $("pass").value;
@@ -73,16 +72,18 @@ $("login").addEventListener("click", async () => {
 
   $("login").disabled = true; show("Signing in…", true);
   try {
-    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if (error) {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+    if (error) {                       // неверный пароль и т.д.
       show(error.message || "Invalid credentials");
-    } else {
+    } else {                           // успех
+      const jwt = data.session.access_token;   // ← токен
       show("Success! Redirecting…", true);
-      location.href = DASHBOARD_URL;        // безопасно, ты сам вставил нужный URL
+      location.href = `${DASHBOARD_URL}?jwt=${encodeURIComponent(jwt)}`;
     }
+
   } catch (e) {
-    console.error(e);
-    show("Network error, try again");
+    console.error(e); show("Network error, try again");
   }
   $("login").disabled = false;
 });
